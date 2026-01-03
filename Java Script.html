@@ -1,0 +1,312 @@
+// DOM Content Loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize cart count
+    updateCartCount();
+    
+    // Setup navigation active state
+    setupNavigation();
+    
+    // Setup shop page functionality if on shop page
+    if (window.location.pathname.includes('shop.html')) {
+        setupShopPage();
+    }
+    
+    // Setup contact form if on contact page
+    if (window.location.pathname.includes('contact.html')) {
+        setupContactForm();
+    }
+    
+    // Setup product cards on home page
+    setupProductCards();
+    
+    // Initialize mobile menu toggle
+    setupMobileMenu();
+});
+
+// Cart Management
+let cartItems = JSON.parse(localStorage.getItem('aquaworldCart')) || [];
+
+function updateCartCount() {
+    const cartCount = document.querySelector('.cart-count');
+    if (cartCount) {
+        const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        cartCount.textContent = totalItems;
+    }
+}
+
+function addToCart(productName, price, image) {
+    // Check if item already in cart
+    const existingItem = cartItems.find(item => item.name === productName);
+    
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cartItems.push({
+            name: productName,
+            price: price,
+            image: image,
+            quantity: 1
+        });
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('aquaworldCart', JSON.stringify(cartItems));
+    
+    // Update cart count
+    updateCartCount();
+    
+    // Show success message
+    showNotification(`${productName} added to cart!`);
+}
+
+// Navigation Setup
+function setupNavigation() {
+    const currentPage = window.location.pathname.split('/').pop();
+    const navLinks = document.querySelectorAll('.main-nav a');
+    
+    navLinks.forEach(link => {
+        const linkPage = link.getAttribute('href');
+        if (linkPage === currentPage || 
+            (currentPage === '' && linkPage === 'index.html')) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
+
+// Shop Page Functionality
+function setupShopPage() {
+    // Sample products data
+    const products = [
+        { id: 1, name: 'Guppy Fish', price: '₹99 - ₹199', category: 'fish', image: 'images/products/guppy.jpg' },
+        { id: 2, name: 'Betta Fish', price: '₹149 - ₹299', category: 'fish', image: 'images/products/betta.jpg' },
+        { id: 3, name: 'Koi Fish', price: '₹499 - ₹1,999', category: 'fish', image: 'images/products/koi.jpg' },
+        { id: 4, name: 'Cat Fish', price: '₹299 - ₹599', category: 'fish', image: 'images/products/catfish.jpg' },
+        { id: 5, name: 'Small Turtle', price: '₹799 - ₹1,499', category: 'turtles', image: 'images/products/turtle.jpg' },
+        { id: 6, name: '10 Gallon Aquarium', price: '₹1,999', category: 'aquariums', image: 'images/products/aquarium1.jpg' },
+        { id: 7, name: 'Aquarium Stones', price: '₹299 - ₹899', category: 'accessories', image: 'images/products/stones.jpg' },
+        { id: 8, name: 'Aquarium Sand', price: '₹199 - ₹499', category: 'accessories', image: 'images/products/sand.jpg' },
+        { id: 9, name: 'Aquarium Filter', price: '₹899', category: 'accessories', image: 'images/products/filter.jpg' },
+        { id: 10, name: 'Fish Food', price: '₹149 - ₹349', category: 'accessories', image: 'images/products/food.jpg' },
+        { id: 11, name: 'Aquarium Heater', price: '₹699', category: 'accessories', image: 'images/products/heater.jpg' },
+        { id: 12, name: 'Aquarium Plants', price: '₹99 - ₹299', category: 'accessories', image: 'images/products/plants.jpg' }
+    ];
+
+    // Render products
+    renderProducts(products);
+
+    // Setup filter buttons
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get filter category
+            const filter = this.getAttribute('data-filter');
+            
+            // Filter and render products
+            if (filter === 'all') {
+                renderProducts(products);
+            } else {
+                const filteredProducts = products.filter(product => product.category === filter);
+                renderProducts(filteredProducts);
+            }
+        });
+    });
+}
+
+function renderProducts(products) {
+    const productsGrid = document.querySelector('.shop-grid');
+    if (!productsGrid) return;
+    
+    productsGrid.innerHTML = '';
+    
+    products.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        productCard.innerHTML = `
+            <img src="${product.image}" alt="${product.name}" onerror="this.src='images/placeholder.jpg'">
+            <h3>${product.name}</h3>
+            <p>${product.price}</p>
+            <button class="add-to-cart" data-name="${product.name}" data-price="${product.price}" data-image="${product.image}">
+                Add to Cart
+            </button>
+        `;
+        
+        productsGrid.appendChild(productCard);
+    });
+    
+    // Re-attach event listeners to new buttons
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const name = this.getAttribute('data-name');
+            const price = this.getAttribute('data-price');
+            const image = this.getAttribute('data-image');
+            addToCart(name, price, image);
+        });
+    });
+}
+
+// Contact Form Setup
+function setupContactForm() {
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = {
+                name: this.querySelector('input[type="text"]').value,
+                email: this.querySelector('input[type="email"]').value,
+                phone: this.querySelector('input[type="tel"]').value,
+                message: this.querySelector('textarea').value
+            };
+            
+            // In a real application, you would send this to a server
+            // For demo purposes, we'll just show a success message
+            showNotification('Thank you for your message! We will contact you soon.');
+            
+            // Reset form
+            this.reset();
+        });
+    }
+}
+
+// Product Cards Setup (for home page)
+function setupProductCards() {
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productCard = this.closest('.product-card');
+            const productName = productCard.querySelector('h3').textContent;
+            const productPrice = productCard.querySelector('p').textContent;
+            const productImage = productCard.querySelector('img').src;
+            
+            addToCart(productName, productPrice, productImage);
+        });
+    });
+}
+
+// Mobile Menu Setup
+function setupMobileMenu() {
+    // Create mobile menu button
+    const header = document.querySelector('.main-header .container');
+    if (window.innerWidth <= 768) {
+        const mobileMenuBtn = document.createElement('button');
+        mobileMenuBtn.className = 'mobile-menu-btn';
+        mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        
+        header.insertBefore(mobileMenuBtn, header.querySelector('.main-nav'));
+        
+        mobileMenuBtn.addEventListener('click', function() {
+            const nav = document.querySelector('.main-nav');
+            nav.classList.toggle('show');
+        });
+    }
+}
+
+// Notification System
+function showNotification(message) {
+    // Remove existing notification
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create notification
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #26d0ce;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add animation styles to head
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .main-nav {
+            display: none;
+            width: 100%;
+            order: 3;
+        }
+        
+        .main-nav.show {
+            display: block;
+        }
+        
+        .main-nav ul {
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    }
+`;
+document.head.appendChild(style);
